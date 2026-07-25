@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Gestión Legal</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1b3a6b;
+  --navy2:#254d90;
+  --green:#2d7a3a;
+  --red:#c0392b;
+  --amber:#b45309;
+  --gold:#8a6200;
+  --blue:#2563eb;
+  --bg:#f2f4f8;
+  --white:#fff;
+  --border:#dde1ea;
+  --text:#1a1d2e;
+  --muted:#64748b;
+  --soft:#eef1f8;
+  --r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.07),0 2px 8px rgba(0,0,0,.05);
+  --sh2:0 6px 24px rgba(0,0,0,.11);
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+
+/* ─── HEADER ─── */
+.hdr{
+  background:var(--navy);padding:0 32px;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.18)
+}
+.hdr-l{display:flex;align-items:center;gap:10px}
+.hdr-logo{
+  width:32px;height:32px;border-radius:7px;
+  background:rgba(255,255,255,.15);
+  display:flex;align-items:center;justify-content:center
+}
+.hdr h1{color:#fff;font-size:15px;font-weight:700;letter-spacing:-.1px}
+.hdr-r{display:flex;gap:6px}
+.xbtn{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:6px 12px;border-radius:5px;
+  border:1px solid rgba(255,255,255,.25);
+  background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);
+  font-size:12px;font-weight:600;cursor:pointer;transition:all .13s
+}
+.xbtn:hover{background:rgba(255,255,255,.2);color:#fff}
+
+/* ─── NAV TABS ─── */
+.navt{
+  background:var(--white);border-bottom:1px solid var(--border);
+  padding:0 32px;display:flex
+}
+.ntab{
+  padding:13px 20px;border:none;background:none;cursor:pointer;
+  font-size:13px;font-weight:600;color:var(--muted);
+  border-bottom:2.5px solid transparent;margin-bottom:-1px;
+  display:inline-flex;align-items:center;gap:7px;transition:color .13s,border-color .13s
+}
+.ntab:hover{color:var(--navy)}
+.ntab.on{color:var(--navy);border-bottom-color:var(--navy)}
+.ntab .chip{
+  background:var(--soft);color:var(--muted);font-size:10px;
+  font-weight:700;border-radius:20px;padding:1px 7px
+}
+.ntab.on .chip{background:var(--navy);color:#fff}
+
+/* ─── STATS BAR ─── */
+.statsbar{
+  display:flex;gap:0;margin-bottom:20px;
+  background:var(--white);border-radius:var(--r);
+  box-shadow:var(--sh);border:1px solid var(--border);
+  overflow:hidden
+}
+.sitem{
+  flex:1;padding:14px 18px;display:flex;align-items:center;gap:12px;
+  border-right:1px solid var(--border);position:relative
+}
+.sitem:last-child{border-right:none}
+.sitem .sdot{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0
+}
+.sitem .sval{font-size:22px;font-weight:800;color:var(--text);line-height:1}
+.sitem .stxt{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+
+/* ─── MAIN ─── */
+main{max-width:1340px;margin:0 auto;padding:24px 32px}
+.tp{display:none}.tp.on{display:block}
+
+/* ─── CARD ─── */
+.card{background:var(--white);border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:16px}
+.ch{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.cht{font-size:14px;font-weight:700;color:var(--navy)}
+.chs{font-size:11px;color:var(--muted);margin-top:2px}
+.cb{padding:18px}
+
+/* ─── FORM ─── */
+.fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.f{display:flex;flex-direction:column;gap:4px}
+.f.s2{grid-column:span 2}.f.s3{grid-column:span 3}.f.full{grid-column:1/-1}
+label{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.45px}
+label .req{color:var(--red)}
+input,select,textarea{
+  border:1.5px solid var(--border);border-radius:6px;
+  padding:8px 10px;font-size:13px;font-family:inherit;
+  color:var(--text);background:var(--white);
+  transition:border-color .13s,box-shadow .13s;width:100%
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(27,58,107,.09)}
+textarea{resize:vertical;min-height:70px}
+.far{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
+
+/* ─── BUTTONS ─── */
+.btn{padding:8px 15px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .13s;font-family:inherit;white-space:nowrap}
+.btn:active{transform:translateY(1px)}
+.btn-navy{background:var(--navy);color:#fff}.btn-navy:hover{background:var(--navy2)}
+.btn-ghost{background:var(--white);color:var(--muted);border:1.5px solid var(--border)}.btn-ghost:hover{border-color:var(--navy);color:var(--navy);background:var(--soft)}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:5px}
+/* icon actions */
+.ia{width:28px;height:28px;border:none;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0}
+.ia:active{transform:scale(.92)}
+.ia-e{background:#e8edf8;color:var(--navy)}.ia-e:hover{background:#d0d9f0}
+.ia-p{background:#fef3c7;color:#92400e}.ia-p:hover{background:#fde68a}
+.ia-g{background:#dbeafe;color:#1e40af}.ia-g:hover{background:#bfdbfe}
+.ia-v{background:#d1fae5;color:#065f46}.ia-v:hover{background:#a7f3d0}
+.ia-d{background:#fee2e2;color:var(--red)}.ia-d:hover{background:#fecaca}
+
+/* ─── PILLS FILTRO ─── */
+.pills{display:flex;gap:5px;flex-wrap:wrap}
+.pill{padding:4px 12px;border-radius:20px;border:1.5px solid var(--border);background:var(--white);font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .12s}
+.pill:hover,.pill.on{border-color:var(--navy);color:var(--navy);background:var(--soft)}
+
+/* ─── TABLE ─── */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:var(--soft);color:var(--muted);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.45px;padding:9px 12px;border-bottom:2px solid var(--border);white-space:nowrap;text-align:left}
+tbody tr{border-bottom:1px solid #f0f3f9;transition:background .1s}
+tbody tr:hover{background:#f8faff}
+tbody td{padding:9px 12px;vertical-align:middle}
+tbody tr:last-child{border-bottom:none}
+.acts{display:flex;gap:3px;align-items:center}
+
+/* ─── BADGES ─── */
+.bx{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;white-space:nowrap}
+.b-p{background:#fef3c7;color:#92400e}
+.b-g{background:#dbeafe;color:#1e40af}
+.b-v{background:#d1fae5;color:#065f46}
+.b-a{background:#fee2e2;color:#991b1b}
+.b-m{background:#fef9c3;color:#854d0e}
+.b-b{background:#dcfce7;color:#166534}
+.b-c{background:#ede9fe;color:#5b21b6}
+.b-si{background:#d1fae5;color:#065f46}
+.b-no{background:#fee2e2;color:#991b1b}
+
+/* ─── CARPETAS MES (FINALIZADOS) ─── */
+.mes-grupo{margin-bottom:12px;border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.mes-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 16px;background:var(--soft);cursor:pointer;
+  user-select:none;transition:background .12s
+}
+.mes-header:hover{background:#e3e8f5}
+.mes-header-l{display:flex;align-items:center;gap:10px}
+.mes-header-l svg{color:var(--navy);flex-shrink:0}
+.mes-titulo{font-size:13px;font-weight:700;color:var(--navy);text-transform:capitalize}
+.mes-count{font-size:11px;font-weight:600;color:var(--muted);background:var(--white);border:1px solid var(--border);border-radius:20px;padding:1px 9px}
+.mes-arrow{color:var(--muted);transition:transform .2s;font-size:14px}
+.mes-body{display:none}
+.mes-body.open{display:block}
+
+/* ─── PAGINACIÓN ─── */
+.pag{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-top:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.pag-info{font-size:12px;color:var(--muted)}
+.pag-btns{display:flex;gap:3px}
+.pb{width:28px;height:28px;border:1.5px solid var(--border);border-radius:5px;background:var(--white);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.pb:hover{border-color:var(--navy);color:var(--navy);background:var(--soft)}
+.pb.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.pb:disabled{opacity:.35;cursor:default;pointer-events:none}
+
+/* ─── MODAL ─── */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:500;align-items:center;justify-content:center;padding:16px}
+.ov.open{display:flex}
+.modal{background:var(--white);border-radius:10px;box-shadow:var(--sh2);width:100%;max-width:660px;max-height:90vh;overflow-y:auto}
+.mh{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-size:14px;font-weight:700;color:var(--navy)}
+.mx{background:none;border:none;cursor:pointer;color:var(--muted);font-size:17px;padding:3px 6px;border-radius:4px;line-height:1}
+.mx:hover{background:#fee2e2;color:var(--red)}
+.mb{padding:20px}.mf{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+
+/* ─── TOAST ─── */
+#tc{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:7px}
+.toast{padding:10px 15px;border-radius:7px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;max-width:290px;box-shadow:var(--sh2);animation:tin .2s ease;color:#fff}
+.toast.ok{background:var(--green)}.toast.err{background:var(--red)}.toast.info{background:var(--navy)}
+@keyframes tin{from{transform:translateX(50px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ─── EMPTY / LOAD ─── */
+.erow td,.lrow td{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+.spin{display:inline-block;width:15px;height:15px;border:2px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:rot .7s linear infinite;vertical-align:middle;margin-right:5px}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+@media(max-width:700px){
+  .hdr,.navt{padding:0 12px}main{padding:14px}
+  .fg{grid-template-columns:1fr}.f.s2,.f.s3,.f.full{grid-column:1}
+  .statsbar{flex-direction:column}.sitem{border-right:none;border-bottom:1px solid var(--border)}
+  .sitem:last-child{border-bottom:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header class="hdr">
+  <div class="hdr-l">
+    <div class="hdr-logo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    </div>
+    <h1>Gestión Legal</h1>
+  </div>
+  <div class="hdr-r">
+    <button class="xbtn" onclick="expP()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportar Pendientes
+    </button>
+    <button class="xbtn" onclick="expA()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportar Asesorías
+    </button>
+  </div>
+</header>
+
+<!-- ══ TABS ══ -->
+<nav class="navt">
+  <button class="ntab on" onclick="goTab('pendientes',this)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V4a2 2 0 00-2-2h-2"/><path d="M9 12l2 2 4-4"/></svg>
+    Pendientes <span class="chip" id="chip-p">0</span>
+  </button>
+  <button class="ntab" onclick="goTab('asesorias',this)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Asesorías <span class="chip" id="chip-a">0</span>
+  </button>
+</nav>
+
+<main>
+
+<!-- ════ PENDIENTES ════ -->
+<div id="tab-pendientes" class="tp on">
+
+  <!-- Stats bar -->
+  <div class="statsbar" id="sp"></div>
+
+  <!-- Formulario -->
+  <div class="card">
+    <div class="ch">
+      <div><div class="cht">Registrar Nuevo Pendiente</div><div class="chs">Fecha y estado se asignan automáticamente</div></div>
+      <button class="btn btn-navy btn-sm" onclick="openFP()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nuevo Pendiente
+      </button>
+    </div>
+    <div class="cb" id="fp" style="display:none">
+      <div class="fg">
+        <div class="f s2"><label>Actividad <span class="req">*</span></label><input id="p-act" placeholder="Describe la actividad o tarea..."/></div>
+        <div class="f">
+          <label>Tipo <span class="req">*</span></label>
+          <select id="p-tipo">
+            <option value="">— Seleccionar —</option>
+            <option>memorial base</option><option>memorial complejo</option>
+            <option>radicacion proceso</option><option>subsanar proceso</option>
+            <option>asistencia a audiencia</option><option>propuesta de pago</option>
+            <option>ASESORIA *INDICAR SOLAMENTE</option>
+            <option>Otros(indicar en observaciones)</option>
+            <option>Comunicación clientes</option>
+          </select>
+        </div>
+        <div class="f"><label>Caso <span class="req">*</span></label><input id="p-caso" placeholder="Nombre del caso o cliente"/></div>
+        <div class="f">
+          <label>Tipo de Gestión</label>
+          <select id="p-tg"><option value="">— Seleccionar —</option><option>Activa</option><option>Reactiva</option></select>
+        </div>
+        <div class="f">
+          <label>Prioridad</label>
+          <select id="p-prio"><option value="Media">Media</option><option value="Alta">Alta</option><option value="Baja">Baja</option></select>
+        </div>
+        <div class="f"><label>Tiempo (horas)</label><input type="number" id="p-tiempo" placeholder="Ej: 2.5" min="0" step="0.5"/></div>
+        <div class="f full"><label>Observaciones</label><textarea id="p-obs" placeholder="Notas adicionales..."></textarea></div>
+      </div>
+      <div class="far">
+        <button class="btn btn-navy" onclick="crearP()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Guardar
+        </button>
+        <button class="btn btn-ghost" onclick="closeFP()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla activos -->
+  <div class="card" id="card-p-activos">
+    <div class="ch">
+      <div><div class="cht">Tareas Activas</div><div class="chs" id="p-lbl">—</div></div>
+      <div class="pills" id="pils-p">
+        <button class="pill on" onclick="filtP('activos',this)">Pendiente + En progreso</button>
+        <button class="pill" onclick="filtP('Pendiente',this)">Solo Pendiente</button>
+        <button class="pill" onclick="filtP('En progreso',this)">En progreso</button>
+        <button class="pill" onclick="filtP('todos',this)">Todos</button>
+      </div>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Fecha</th><th>Actividad</th><th>Tipo</th><th>Caso</th>
+          <th>Gestión</th><th>Prioridad</th><th>Tiempo</th><th>Estado</th>
+          <th>Observaciones</th><th>Acciones</th>
+        </tr></thead>
+        <tbody id="tbl-p"><tr class="lrow"><td colspan="10"><span class="spin"></span>Cargando...</td></tr></tbody>
+      </table>
+    </div>
+    <div class="pag" id="pag-p" style="display:none">
+      <span class="pag-info" id="pag-p-info"></span>
+      <div class="pag-btns" id="pag-p-btns"></div>
+    </div>
+  </div>
+
+  <!-- Finalizados por mes -->
+  <div class="card" id="card-p-fin">
+    <div class="ch">
+      <div><div class="cht">Finalizados por Mes</div><div class="chs">Cada carpeta agrupa los finalizados de ese mes</div></div>
+    </div>
+    <div class="cb" id="meses-fin" style="padding:12px 16px"></div>
+  </div>
+
+</div><!-- /pendientes -->
+
+<!-- ════ ASESORÍAS (ex-seguimientos) ════ -->
+<div id="tab-asesorias" class="tp">
+
+  <div class="statsbar" id="sa"></div>
+
+  <div class="card">
+    <div class="ch">
+      <div><div class="cht">Registrar Nueva Asesoría</div><div class="chs">Fecha y hora se asignan automáticamente</div></div>
+      <button class="btn btn-navy btn-sm" onclick="openFA()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nueva Asesoría
+      </button>
+    </div>
+    <div class="cb" id="fa" style="display:none">
+      <div class="fg">
+        <div class="f"><label>Nombre <span class="req">*</span></label><input id="a-nom" placeholder="Nombre del prospecto o cliente"/></div>
+        <div class="f"><label>Fuente</label><input id="a-fue" placeholder="Referido, Web, WhatsApp..."/></div>
+        <div class="f"><label>Teléfono</label><input id="a-tel" placeholder="+57 300 000 0000"/></div>
+        <div class="f">
+          <label>Tipo</label>
+          <select id="a-tipo"><option value="">— Seleccionar —</option><option value="natural">Natural</option><option value="comerciante">Comerciante</option></select>
+        </div>
+        <div class="f">
+          <label>¿Interesado?</label>
+          <select id="a-int"><option value="">— Seleccionar —</option><option value="Si">Sí</option><option value="No">No</option></select>
+        </div>
+        <div class="f">
+          <label>Estado</label>
+          <select id="a-est">
+            <option value="Asesoría">Asesoría</option>
+            <option value="Propuesta enviada">Propuesta enviada</option>
+            <option value="Seguimiento 1">Seguimiento 1</option>
+            <option value="Seguimiento 2">Seguimiento 2</option>
+            <option value="Seguimiento 3">Seguimiento 3</option>
+            <option value="Cierre">Cierre</option>
+          </select>
+        </div>
+        <div class="f s2"><label>Próximo Paso</label><input id="a-prox" placeholder="Ej: Llamar el lunes, enviar propuesta..."/></div>
+        <div class="f"><label>Fecha Próximo Paso</label><input type="date" id="a-fprox"/></div>
+        <div class="f"><label>Valor Propuesta (COP)</label><input type="number" id="a-val" placeholder="Ej: 3000000" min="0"/></div>
+        <div class="f"><label>Probabilidad (%)</label><input type="number" id="a-prob" placeholder="0-100" min="0" max="100"/></div>
+        <div class="f"><label>Fecha Est. Cierre</label><input type="date" id="a-fcie"/></div>
+        <div class="f full"><label>Observaciones Detalladas</label><textarea id="a-obs" placeholder="Detalles..."></textarea></div>
+        <div class="f"><label>Fecha de Firma de Contrato</label><input type="date" id="a-ffir"/></div>
+      </div>
+      <div class="far">
+        <button class="btn btn-navy" onclick="crearA()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Guardar
+        </button>
+        <button class="btn btn-ghost" onclick="closeFA()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">
+      <div><div class="cht">Listado de Asesorías</div><div class="chs" id="a-lbl">—</div></div>
+      <div class="pills" id="pils-a">
+        <button class="pill on" onclick="filtA('todos',this)">Todos</button>
+        <button class="pill" onclick="filtA('Asesoría',this)">Asesoría</button>
+        <button class="pill" onclick="filtA('Propuesta enviada',this)">Propuesta</button>
+        <button class="pill" onclick="filtA('Cierre',this)">Cierre</button>
+      </div>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Fecha</th><th>Hora</th><th>Nombre</th><th>Fuente</th>
+          <th>Teléfono</th><th>Tipo</th><th>Interesado</th>
+          <th>Estado</th><th>Próximo Paso</th><th>F. Próx. Paso</th>
+          <th>Valor</th><th>Prob.%</th><th>F. Cierre</th>
+          <th>Observaciones</th><th>Acciones</th>
+        </tr></thead>
+        <tbody id="tbl-a"><tr class="lrow"><td colspan="15"><span class="spin"></span>Cargando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div><!-- /asesorias -->
+
+</main>
+
+<div id="tc"></div>
+
+<!-- ══ MODAL EDITAR PENDIENTE ══ -->
+<div class="ov" id="mod-p">
+  <div class="modal">
+    <div class="mh"><h3>Editar Pendiente</h3><button class="mx" onclick="cm('mod-p')">✕</button></div>
+    <div class="mb">
+      <input type="hidden" id="ep-id"/>
+      <div class="fg">
+        <div class="f s2"><label>Actividad</label><input id="ep-act"/></div>
+        <div class="f"><label>Tipo</label>
+          <select id="ep-tipo"><option value="">— Seleccionar —</option>
+            <option>memorial base</option><option>memorial complejo</option>
+            <option>radicacion proceso</option><option>subsanar proceso</option>
+            <option>asistencia a audiencia</option><option>propuesta de pago</option>
+            <option>ASESORIA *INDICAR SOLAMENTE</option>
+            <option>Otros(indicar en observaciones)</option><option>Comunicación clientes</option>
+          </select></div>
+        <div class="f"><label>Caso</label><input id="ep-caso"/></div>
+        <div class="f"><label>Tipo de Gestión</label>
+          <select id="ep-tg"><option value="">— Seleccionar —</option><option>Activa</option><option>Reactiva</option></select></div>
+        <div class="f"><label>Prioridad</label>
+          <select id="ep-prio"><option value="Alta">Alta</option><option value="Media">Media</option><option value="Baja">Baja</option></select></div>
+        <div class="f"><label>Tiempo (h)</label><input type="number" id="ep-tiempo" min="0" step="0.5"/></div>
+        <div class="f"><label>Estado</label>
+          <select id="ep-est"><option>Pendiente</option><option>En progreso</option><option>Finalizado</option></select></div>
+        <div class="f full"><label>Observaciones</label><textarea id="ep-obs"></textarea></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-ghost" onclick="cm('mod-p')">Cancelar</button><button class="btn btn-navy" onclick="guardarP()">Guardar</button></div>
+  </div>
+</div>
+
+<!-- ══ MODAL EDITAR ASESORÍA ══ -->
+<div class="ov" id="mod-a">
+  <div class="modal">
+    <div class="mh"><h3>Editar Asesoría</h3><button class="mx" onclick="cm('mod-a')">✕</button></div>
+    <div class="mb">
+      <input type="hidden" id="ea-id"/>
+      <div class="fg">
+        <div class="f"><label>Nombre</label><input id="ea-nom"/></div>
+        <div class="f"><label>Fuente</label><input id="ea-fue"/></div>
+        <div class="f"><label>Teléfono</label><input id="ea-tel"/></div>
+        <div class="f"><label>Tipo</label>
+          <select id="ea-tipo"><option value="">— Seleccionar —</option><option value="natural">Natural</option><option value="comerciante">Comerciante</option></select></div>
+        <div class="f"><label>¿Interesado?</label>
+          <select id="ea-int"><option value="">— Seleccionar —</option><option value="Si">Sí</option><option value="No">No</option></select></div>
+        <div class="f"><label>Estado</label>
+          <select id="ea-est">
+            <option value="Asesoría">Asesoría</option><option value="Propuesta enviada">Propuesta enviada</option>
+            <option value="Seguimiento 1">Seguimiento 1</option><option value="Seguimiento 2">Seguimiento 2</option>
+            <option value="Seguimiento 3">Seguimiento 3</option><option value="Cierre">Cierre</option>
+          </select></div>
+        <div class="f s2"><label>Próximo Paso</label><input id="ea-prox"/></div>
+        <div class="f"><label>Fecha Próximo Paso</label><input type="date" id="ea-fprox"/></div>
+        <div class="f"><label>Valor Propuesta</label><input type="number" id="ea-val" min="0"/></div>
+        <div class="f"><label>Probabilidad %</label><input type="number" id="ea-prob" min="0" max="100"/></div>
+        <div class="f"><label>Fecha Est. Cierre</label><input type="date" id="ea-fcie"/></div>
+        <div class="f"><label>Fecha de Firma</label><input type="date" id="ea-ffir"/></div>
+        <div class="f full"><label>Observaciones</label><textarea id="ea-obs"></textarea></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-ghost" onclick="cm('mod-a')">Cancelar</button><button class="btn btn-navy" onclick="guardarA()">Guardar</button></div>
+  </div>
+</div>
+
+<script>
+// ── SUPABASE REST ─────────────────────
+// Se usa fetch directamente para no depender de otra librería ni quedarse
+// bloqueado si el CDN de Supabase no carga.
+const SUPABASE_URL='https://jfkvgrmqhnikvscyqyho.supabase.co';
+const SUPABASE_KEY='sb_publishable_7Vh_PEWk3U6XGgplD-pEng_52duCeCr';
+const REQUEST_TIMEOUT_MS=12000;
+
+function restQuery(table,method,body){
+  const state={table,method,body,params:[]};
+  const query={
+    select(columns='*'){
+      state.params.push(`select=${encodeURIComponent(columns)}`);
+      return query;
+    },
+    order(column,options={}){
+      state.params.push(`order=${encodeURIComponent(column)}.${options.ascending===false?'desc':'asc'}`);
+      return query;
+    },
+    eq(column,value){
+      state.params.push(`${encodeURIComponent(column)}=eq.${encodeURIComponent(value)}`);
+      return query;
+    },
+    then(resolve,reject){
+      return executeRest(state).then(resolve,reject);
+    },
+    catch(reject){
+      return executeRest(state).catch(reject);
+    }
+  };
+  return query;
+}
+
+async function executeRest(state){
+  const url=`${SUPABASE_URL}/rest/v1/${state.table}${state.params.length?'?'+state.params.join('&'):''}`;
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),REQUEST_TIMEOUT_MS);
+  try{
+    const response=await fetch(url,{
+      method:state.method,
+      signal:controller.signal,
+      headers:{
+        apikey:SUPABASE_KEY,
+        Authorization:`Bearer ${SUPABASE_KEY}`,
+        'Content-Type':'application/json',
+        Prefer:state.method==='POST'?'return=representation':'return=minimal'
+      },
+      body:state.body===undefined?undefined:JSON.stringify(state.body)
+    });
+    const raw=await response.text();
+    let parsed=null;
+    try{parsed=raw?JSON.parse(raw):null;}catch(_){parsed=null;}
+    if(!response.ok){
+      const message=parsed?.message||parsed?.details||parsed?.hint||raw||`Error HTTP ${response.status}`;
+      return {data:null,error:{message, status:response.status}};
+    }
+    return {data:parsed,error:null};
+  }catch(error){
+    const message=error?.name==='AbortError'
+      ? 'Supabase no respondió en 12 segundos.'
+      : 'No se pudo conectar con Supabase. Verifica internet y las políticas RLS.';
+    return {data:null,error:{message}};
+  }finally{
+    clearTimeout(timer);
+  }
+}
+
+const DB={
+  from(table){
+    return {
+      select:columns=>restQuery(table,'GET').select(columns),
+      insert:rows=>restQuery(table,'POST',rows),
+      update:payload=>restQuery(table,'PATCH',payload),
+      delete:()=>restQuery(table,'DELETE')
+    };
+  }
+};
+
+// ── ESTADO ────────────────────────────
+let pendientes=[], asesorias=[], filP='activos', filA='todos', pagP=1;
+const POR_PAG=5;
+
+// ── UTILS ─────────────────────────────
+const hoy=()=>new Date().toISOString().split('T')[0];
+const ahora=()=>new Date().toTimeString().slice(0,5);
+function fmt(f){if(!f)return'—';const p=f.split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:f;}
+function fmtM(v){if(!v&&v!==0)return'—';return new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(v);}
+function nombreMes(y,m){
+  const meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  return `${meses[parseInt(m,10)-1]} ${y}`;
+}
+
+function toast(msg,t='info'){
+  const d=document.createElement('div');d.className=`toast ${t}`;
+  d.textContent=(t==='ok'?'✓ ':t==='err'?'✕ ':'ℹ ')+msg;
+  document.getElementById('tc').appendChild(d);setTimeout(()=>d.remove(),3000);
+}
+
+function errorText(error){
+  return error?.message||error?.details||error?.hint||'No se pudo conectar con la base de datos.';
+}
+
+function claseInteresado(valor){
+  return valor==='Si'?'b-si':valor==='No'?'b-no':'';
+}
+
+function mostrarErrorCarga(tbodyId,colspan,reintento,message){
+  const tbody=document.getElementById(tbodyId);
+  tbody.innerHTML='';
+  const tr=document.createElement('tr');
+  tr.className='erow';
+  const td=document.createElement('td');
+  td.colSpan=colspan;
+  const text=document.createElement('div');
+  text.textContent=message;
+  const btn=document.createElement('button');
+  btn.className='btn btn-ghost btn-sm';
+  btn.style.marginTop='10px';
+  btn.textContent='Reintentar';
+  btn.onclick=reintento;
+  td.append(text,btn);
+  tr.appendChild(td);
+  tbody.appendChild(tr);
+}
+
+async function conTiempoLimite(consulta){
+  let timer;
+  try{
+    return await Promise.race([
+      consulta,
+      new Promise((_,reject)=>{
+        timer=setTimeout(()=>reject(new Error('La consulta tardó demasiado. Revisa Supabase y vuelve a intentarlo.')),REQUEST_TIMEOUT_MS);
+      })
+    ]);
+  }finally{
+    clearTimeout(timer);
+  }
+}
+
+function goTab(name,btn){
+  document.querySelectorAll('.tp').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ntab').forEach(b=>b.classList.remove('on'));
+  document.getElementById('tab-'+name).classList.add('on');
+  if(btn)btn.classList.add('on');
+}
+
+function openFP(){document.getElementById('fp').style.display='block';}
+function closeFP(){document.getElementById('fp').style.display='none';}
+function openFA(){document.getElementById('fa').style.display='block';}
+function closeFA(){document.getElementById('fa').style.display='none';}
+function om(id){document.getElementById(id).classList.add('open');}
+function cm(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+// SVG icons
+const IC={
+  e:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+  p:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+  g:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
+  v:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+  d:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>`,
+  f:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>`,
+};
+
+// ════════════════════════════
+// PENDIENTES
+// ════════════════════════════
+async function cargarP(){
+  try{
+    const {data,error}=await conTiempoLimite(DB.from('pendientes').select('*').order('fecha',{ascending:false}));
+    if(error)throw error;
+    pendientes=data||[];
+    renderStatsP();renderP();renderFinMes();
+    document.getElementById('chip-p').textContent=pendientes.length;
+  }catch(error){
+    const msg=errorText(error);
+    toast('Error cargando pendientes: '+msg,'err');
+    mostrarErrorCarga('tbl-p',10,cargarP,'No se pudieron cargar los pendientes.');
+  }
+}
+
+function renderStatsP(){
+  const t=pendientes.length;
+  const pe=pendientes.filter(x=>x.estado==='Pendiente').length;
+  const pr=pendientes.filter(x=>x.estado==='En progreso').length;
+  const fi=pendientes.filter(x=>x.estado==='Finalizado').length;
+  document.getElementById('sp').innerHTML=`
+    <div class="sitem"><span class="sdot" style="background:#1b3a6b"></span><div><div class="sval">${t}</div><div class="stxt">Total</div></div></div>
+    <div class="sitem"><span class="sdot" style="background:#b45309"></span><div><div class="sval">${pe}</div><div class="stxt">Pendientes</div></div></div>
+    <div class="sitem"><span class="sdot" style="background:#2563eb"></span><div><div class="sval">${pr}</div><div class="stxt">En Progreso</div></div></div>
+    <div class="sitem"><span class="sdot" style="background:#2d7a3a"></span><div><div class="sval">${fi}</div><div class="stxt">Finalizados</div></div></div>
+  `;
+}
+
+function filtP(est,btn){
+  filP=est;pagP=1;
+  document.querySelectorAll('#pils-p .pill').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  renderP();
+}
+
+function listaFiltrada(){
+  if(filP==='activos') return pendientes.filter(x=>x.estado==='Pendiente'||x.estado==='En progreso');
+  if(filP==='todos') return pendientes;
+  return pendientes.filter(x=>x.estado===filP);
+}
+
+function renderP(){
+  // excluimos finalizados de la tabla activa
+  const base=listaFiltrada().filter(x=>x.estado!=='Finalizado');
+  // si filtro es 'todos', incluimos finalizados también
+  const lista = filP==='todos' ? listaFiltrada() : base;
+  const total=lista.length;
+  const totPag=Math.ceil(total/POR_PAG)||1;
+  if(pagP>totPag)pagP=totPag;
+  const desde=(pagP-1)*POR_PAG,hasta=desde+POR_PAG;
+  const page=lista.slice(desde,hasta);
+
+  document.getElementById('p-lbl').textContent=`${total} registro${total!==1?'s':''}`;
+
+  const tbody=document.getElementById('tbl-p');
+  if(!page.length){
+    tbody.innerHTML=`<tr class="erow"><td colspan="10">Sin registros</td></tr>`;
+  } else {
+    tbody.innerHTML=page.map(p=>{
+      const pb=p.prioridad==='Alta'?'b-a':p.prioridad==='Baja'?'b-b':'b-m';
+      const eb=p.estado==='Finalizado'?'b-v':p.estado==='En progreso'?'b-g':'b-p';
+      const obs=(p.observaciones||'').slice(0,45)+((p.observaciones||'').length>45?'...':'');
+      return `<tr>
+        <td style="white-space:nowrap">${fmt(p.fecha)}</td>
+        <td><strong>${p.actividad||'—'}</strong></td>
+        <td style="font-size:11.5px">${p.tipo||'—'}</td>
+        <td>${p.caso||'—'}</td>
+        <td>${p.tipo_gestion||'—'}</td>
+        <td><span class="bx ${pb}">${p.prioridad||'—'}</span></td>
+        <td>${p.tiempo?p.tiempo+'h':'—'}</td>
+        <td><span class="bx ${eb}">${p.estado||'Pendiente'}</span></td>
+        <td style="font-size:12px;color:var(--muted)">${obs||'—'}</td>
+        <td><div class="acts">
+          <button class="ia ia-e" onclick="abrirEP('${p.id}')" title="Editar">${IC.e}</button>
+          <button class="ia ia-p" onclick="estadoP('${p.id}','Pendiente')" title="→ Pendiente">${IC.p}</button>
+          <button class="ia ia-g" onclick="estadoP('${p.id}','En progreso')" title="→ En progreso">${IC.g}</button>
+          <button class="ia ia-v" onclick="estadoP('${p.id}','Finalizado')" title="→ Finalizado">${IC.v}</button>
+          <button class="ia ia-d" onclick="elimP('${p.id}')" title="Eliminar">${IC.d}</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // paginación
+  const pagEl=document.getElementById('pag-p');
+  if(total>POR_PAG){
+    pagEl.style.display='flex';
+    document.getElementById('pag-p-info').textContent=`Página ${pagP} de ${totPag}`;
+    const btns=document.getElementById('pag-p-btns');btns.innerHTML='';
+    const prev=document.createElement('button');
+    prev.className='pb';prev.innerHTML='‹';prev.disabled=pagP===1;
+    prev.onclick=()=>{pagP--;renderP();};btns.appendChild(prev);
+    const max=5,half=Math.floor(max/2);
+    let start=Math.max(1,pagP-half),end=Math.min(totPag,start+max-1);
+    if(end-start<max-1)start=Math.max(1,end-max+1);
+    for(let i=start;i<=end;i++){
+      const b=document.createElement('button');
+      b.className='pb'+(i===pagP?' on':'');b.textContent=i;
+      const pg=i;b.onclick=()=>{pagP=pg;renderP();};btns.appendChild(b);
+    }
+    const next=document.createElement('button');
+    next.className='pb';next.innerHTML='›';next.disabled=pagP===totPag;
+    next.onclick=()=>{pagP++;renderP();};btns.appendChild(next);
+  } else {
+    pagEl.style.display='none';
+  }
+}
+
+// Finalizados agrupados por mes
+function renderFinMes(){
+  const fin=pendientes.filter(x=>x.estado==='Finalizado');
+  const mesesMap={};
+  fin.forEach(p=>{
+    const f=p.fecha_realizacion||p.fecha||'';
+    const key=f.slice(0,7); // YYYY-MM
+    if(!mesesMap[key])mesesMap[key]=[];
+    mesesMap[key].push(p);
+  });
+  const claves=Object.keys(mesesMap).sort((a,b)=>b.localeCompare(a));
+  const cont=document.getElementById('meses-fin');
+  if(!claves.length){
+    cont.innerHTML=`<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">Aún no hay tareas finalizadas</p>`;
+    return;
+  }
+  cont.innerHTML=claves.map((clave,idx)=>{
+    const [y,m]=clave.split('-');
+    const items=mesesMap[clave];
+    const isOpen=idx===0;
+    const rows=items.map(p=>{
+      const pb=p.prioridad==='Alta'?'b-a':p.prioridad==='Baja'?'b-b':'b-m';
+      return `<tr>
+        <td style="white-space:nowrap">${fmt(p.fecha_realizacion||p.fecha)}</td>
+        <td><strong>${p.actividad||'—'}</strong></td>
+        <td style="font-size:11.5px">${p.tipo||'—'}</td>
+        <td>${p.caso||'—'}</td>
+        <td>${p.tipo_gestion||'—'}</td>
+        <td><span class="bx ${pb}">${p.prioridad||'—'}</span></td>
+        <td>${p.tiempo?p.tiempo+'h':'—'}</td>
+        <td style="font-size:12px;color:var(--muted)">${(p.observaciones||'').slice(0,45)+(p.observaciones&&p.observaciones.length>45?'...':'')}</td>
+        <td><div class="acts">
+          <button class="ia ia-e" onclick="abrirEP('${p.id}')" title="Editar">${IC.e}</button>
+          <button class="ia ia-p" onclick="estadoP('${p.id}','Pendiente')" title="→ Pendiente">${IC.p}</button>
+          <button class="ia ia-d" onclick="elimP('${p.id}')" title="Eliminar">${IC.d}</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+    return `
+    <div class="mes-grupo">
+      <div class="mes-header" onclick="toggleMes(this)">
+        <div class="mes-header-l">
+          ${IC.f}
+          <span class="mes-titulo">${nombreMes(y,m)}</span>
+          <span class="mes-count">${items.length} tarea${items.length!==1?'s':''}</span>
+        </div>
+        <span class="mes-arrow">${isOpen?'▲':'▼'}</span>
+      </div>
+      <div class="mes-body tw ${isOpen?'open':''}">
+        <table>
+          <thead><tr>
+            <th>F. Realización</th><th>Actividad</th><th>Tipo</th><th>Caso</th>
+            <th>Gestión</th><th>Prioridad</th><th>Tiempo</th><th>Observaciones</th><th>Acciones</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleMes(header){
+  const body=header.nextElementSibling;
+  const arrow=header.querySelector('.mes-arrow');
+  const open=body.classList.toggle('open');
+  arrow.textContent=open?'▲':'▼';
+}
+
+async function crearP(){
+  const act=document.getElementById('p-act').value.trim();
+  const caso=document.getElementById('p-caso').value.trim();
+  if(!act||!caso){toast('Actividad y Caso son obligatorios','err');return;}
+  const obj={actividad:act,caso,tipo:document.getElementById('p-tipo').value,
+    tipo_gestion:document.getElementById('p-tg').value,prioridad:document.getElementById('p-prio').value,
+    tiempo:document.getElementById('p-tiempo').value||null,observaciones:document.getElementById('p-obs').value,
+    fecha:hoy(),estado:'Pendiente'};
+  const {error}=await DB.from('pendientes').insert([obj]);
+  if(error){toast('Error: '+error.message,'err');return;}
+  toast('Pendiente guardado','ok');
+  ['p-act','p-caso','p-tiempo','p-obs'].forEach(id=>document.getElementById(id).value='');
+  ['p-tipo','p-tg'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('p-prio').value='Media';
+  closeFP();await cargarP();
+}
+
+async function estadoP(id,estado){
+  const up={estado};
+  if(estado==='Finalizado')up.fecha_realizacion=hoy();
+  const {error}=await DB.from('pendientes').update(up).eq('id',id);
+  if(error){toast('Error: '+error.message,'err');return;}
+  toast(`→ ${estado}`,'ok');await cargarP();
+}
+
+function abrirEP(id){
+  const p=pendientes.find(x=>x.id==id);if(!p)return;
+  document.getElementById('ep-id').value=p.id;
+  document.getElementById('ep-act').value=p.actividad||'';
+  document.getElementById('ep-tipo').value=p.tipo||'';
+  document.getElementById('ep-caso').value=p.caso||'';
+  document.getElementById('ep-tg').value=p.tipo_gestion||'';
+  document.getElementById('ep-prio').value=p.prioridad||'Media';
+  document.getElementById('ep-tiempo').value=p.tiempo||'';
+  document.getElementById('ep-est').value=p.estado||'Pendiente';
+  document.getElementById('ep-obs').value=p.observaciones||'';
+  om('mod-p');
+}
+
+async function guardarP(){
+  const id=document.getElementById('ep-id').value;
+  const estado=document.getElementById('ep-est').value;
+  const actual=pendientes.find(x=>x.id==id);
+  const up={actividad:document.getElementById('ep-act').value,tipo:document.getElementById('ep-tipo').value,
+    caso:document.getElementById('ep-caso').value,tipo_gestion:document.getElementById('ep-tg').value,
+    prioridad:document.getElementById('ep-prio').value,tiempo:document.getElementById('ep-tiempo').value||null,
+    estado,observaciones:document.getElementById('ep-obs').value};
+  if(estado==='Finalizado'&&actual?.estado!=='Finalizado')up.fecha_realizacion=hoy();
+  const {error}=await DB.from('pendientes').update(up).eq('id',id);
+  if(error){toast('Error: '+error.message,'err');return;}
+  toast('Actualizado','ok');cm('mod-p');await cargarP();
+}
+
+async function elimP(id){
+  if(!confirm('¿Eliminar este pendiente?'))return;
+  const {error}=await DB.from('pendientes').delete().eq('id',id);
+  if(error){toast('Error: '+error.message,'err');return;}
+  toast('Eliminado','ok');await cargarP();
+}
+
+// ════════════════════════════
+// ASESORÍAS (ex-seguimientos)
+// ════════════════════════════
+async function cargarA(){
+  try{
+    const {data,error}=await conTiempoLimite(DB.from('seguimientos').select('*').order('fecha',{ascending:false}));
+    if(error)throw error;
+    asesorias=data||[];
+    renderStatsA();renderA();
+    document.getElementById('chip-a').textContent=asesorias.length;
+  }catch(error){
+    const msg=errorText(error);
+    toast('Error cargando asesorías: '+msg,'err');
+    mostrarErrorCarga('tbl-a',15,cargarA,'No se pudieron cargar las asesorías.');
+  }
+}
+
+function renderStatsA(){
+  const t=asesorias.length;
+  const act=asesorias.filter(x=>x.estado_seguimiento!=='Cierre').length;
+  const cie=asesorias.filter(x=>x.estado_seguimiento==='Cierre').length;
+  const val=asesorias.reduce((s,x)=>s+(Number(x.valor_propuesta)||0),0);
+  document.getElementById('sa').innerHTML=`
+    <div class="sitem"><span class="sdot" style="background:#1b3a6b"></span><div><div class="sval">${t}</div><div class="stxt">Total</div></div></div>
+    <div class="sitem"><span class="sdot" style="background:#2563eb"></span><div><div class="sval">${act}</div><div class="stxt">Activas</div></div></div>
+    <div class="sitem"><span class="sdot" style="background:#2d7a3a"></span><div><div class="sval">${cie}</div><div class="stxt">Cierre</div></div></div>
+    <div class="sitem"><span class="sdot" style="background:#b8860b"></span><div><div class="sval" style="font-size:16px">${fmtM(val)}</div><div class="stxt">Pipeline</div></div></div>
+  `;
+}
+
+function filtA(est,btn){
+  filA=est;
+  document.querySelectorAll('#pils-a .pill').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  renderA();
+}
+
+function renderA(){
+  const lista=filA==='todos'?asesorias:asesorias.filter(x=>x.estado_seguimiento===filA);
+  document.getElementById('a-lbl').textContent=`${lista.length} registro${lista.length!==1?'s':''}`;
+  const tbody=document.getElementById('tbl-a');
+  if(!lista.length){tbody.innerHTML=`<tr class="erow"><td colspan="15">Sin registros</td></tr>`;return;}
+  tbody.innerHTML=lista.map(s=>{
+    const ecls=s.estado_seguimiento==='Cierre'?'b-c':'b-g';
+    const obs=(s.observaciones||'').slice(0,45)+((s.observaciones||'').length>45?'...':'');
+    return `<tr>
+      <td style="white-space:nowrap">${fmt(s.fecha)}</td>
+      <td>${s.hora||'—'}</td>
+      <td><strong>${s.nombre||'—'}</strong></td>
+      <td>${s.fuente||'—'}</td>
+      <td>${s.telefono||'—'}</td>
+      <td style="text-transform:capitalize">${s.tipo||'—'}</td>
+       <td><span class="bx ${claseInteresado(s.interesado)}">${s.interesado||'—'}</span></td>
+      <td><span class="bx ${ecls}">${s.estado_seguimiento||'—'}</span></td>
+      <td style="font-size:12px">${s.proximo_paso||'—'}</td>
+      <td style="white-space:nowrap">${fmt(s.fecha_proximo_paso)}</td>
+      <td style="white-space:nowrap">${fmtM(s.valor_propuesta)}</td>
+      <td>${s.probabilidad!=null?s.probabilidad+'%':'—'}</td>
+      <td style="white-space:nowrap">${fmt(s.fecha_cierre)}</td>
+      <td style="font-size:12px;color:var(--muted)">${obs||'—'}</td>
+      <td><div class="acts">
+        <button class="ia ia-e" onclick="abrirEA('${s.id}')" title="Editar">${IC.e}</button>
+        <button class="ia ia-d" onclick="elimA('${s.id}')" title="Eliminar">${IC.d}</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+async function crearA(){
+  const nom=document.getElementById('a-nom').value.trim();
+  if(!nom){toast('El campo Nombre es obligatorio','err');return;}
+  const obj={nombre:nom,fuente:document.getElementById('a-fue').value,
+    telefono:document.getElementById('a-tel').value,tipo:document.getElementById('a-tipo').value,
+    interesado:document.getElementById('a-int').value,estado_seguimiento:document.getElementById('a-est').value,
+    proximo_paso:document.getElementById('a-prox').value,fecha_proximo_paso:document.getElementById('a-fprox').value||null,
+    valor_propuesta:document.getElementById('a-val').value||null,probabilidad:document.getElementById('a-prob').value||null,
+    fecha_cierre:document.getElementById('a-fcie').value||null,observaciones:document.getElementById('a-obs').value,
+    fecha_firma:document.getElementById('a-ffir').value||null,fecha:hoy(),hora:ahora()};
+  const {error}=await DB.from('seguimientos').insert([obj]);
+  if(error){toast('Error: '+error.message,'err');return;}
+  toast('Asesoría registrada','ok');
+  ['a-nom','a-fue','a-tel','a-prox','a-val','a-prob','a-obs'].forEach(id=>document.getElementById(id).value='');
+  ['a-tipo','a-int','a-fprox','a-fcie','a-ffir'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('a-est').value='Asesoría';
+  closeFA();await cargarA();
+}
+
+function abrirEA(id){
+  const s=asesorias.find(x=>x.id==id);if(!s)return;
+  document.getElementById('ea-id').value=s.id;
+  document.getElementById('ea-nom').value=s.nombre||'';
+  document.getElementById('ea-fue').value=s.fuente||'';
+  document.getElementById('ea-tel').value=s.telefono||'';
+  document.getElementById('ea-tipo').value=s.tipo||'';
+  document.getElementById('ea-int').value=s.interesado||'';
+  document.getElementById('ea-est').value=s.estado_seguimiento||'Asesoría';
+  document.getElementById('ea-prox').value=s.proximo_paso||'';
+  document.getElementById('ea-fprox').value=s.fecha_proximo_paso||'';
+  document.getElementById('ea-val').value=s.valor_propuesta||'';
+  document.getElementById('ea-prob').value=s.probabilidad!=null?s.probabilidad:'';
+  document.getElementById('ea-fcie').value=s.fecha_cierre||'';
+  document.getElementById('ea-ffir').value=s.fecha_firma||'';
+  document.getElementById('ea-obs').value=s.observaciones||'';
+  om('mod-a');
+}
+
+async function guardarA(){
+  const id=document.getElementById('ea-id').value;
+  const up={nombre:document.getElementById('ea-nom').value,fuente:document.getElementById('ea-fue').value,
+    telefono:document.getElementById('ea-tel').value,tipo:document.getElementById('ea-tipo').value,
+    interesado:document.getElementById('ea-int').value,estado_seguimiento:document.getElementById('ea-est').value,
+    proximo_paso:document.getElementById('ea-prox').value,fecha_proximo_paso:document.getElementById('ea-fprox').value||null,
+    valor_propuesta:document.getElementById('ea-val').value||null,probabilidad:document.getElementById('ea-prob').value||null,
+    fecha_cierre:document.getElementById('ea-fcie').value||null,fecha_firma:document.getElementById('ea-ffir').value||null,
+    observaciones:document.getElementById('ea-obs').value};
+  const {error}=await DB.from('seguimientos').update(up).eq('id',id);
+  if(error){toast('Error: '+error.message,'err');return;}
+  toast('Actualizado','ok');cm('mod-a');await cargarA();
+}
+
+async function elimA(id){
+  if(!confirm('¿Eliminar esta asesoría?'))return;
+  const {error}=await DB.from('seguimientos').delete().eq('id',id);
+  if(error){toast('Error: '+error.message,'err');return;}
+  toast('Eliminada','ok');await cargarA();
+}
+
+// ════════════════════════════
+// EXPORTAR
+// ════════════════════════════
+function dl(rows,hoja,archivo){
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,hoja);
+  XLSX.writeFile(wb,`${archivo}_${hoy()}.xlsx`);
+}
+
+function expP(){
+  if(!pendientes.length){toast('No hay datos','err');return;}
+  dl(pendientes.map(p=>({
+    'Fecha':p.fecha||'','Actividad':p.actividad||'','Tipo':p.tipo||'',
+    'Caso*en esta ciudad':p.caso||'','Tipo de Gestion':p.tipo_gestion||'',
+    'Prioridad':p.prioridad||'','Tiempo':p.tiempo||'','OBSERVACIONES':p.observaciones||''
+  })),'Mes a Mes','Pendientes');
+  toast('Exportando Pendientes','ok');
+}
+
+function expA(){
+  if(!asesorias.length){toast('No hay datos','err');return;}
+  dl(asesorias.map(s=>({
+    'fecha':s.fecha||'','hora':s.hora||'','nombre':s.nombre||'',
+    'fuente':s.fuente||'','teléfono':s.telefono||'','tipo':s.tipo||'',
+    'interesado':s.interesado||'','Estado Seguimiento':s.estado_seguimiento||'',
+    'Próximo paso':s.proximo_paso||'','Fecha Próximo Paso':s.fecha_proximo_paso||'',
+    'Valor propuesta':s.valor_propuesta||'','Probabilidad (%)':s.probabilidad!=null?s.probabilidad:'',
+    'Fecha est. cierre':s.fecha_cierre||'','Observaciones Detalladas':s.observaciones||'',
+    'fecha de firma de contrato':s.fecha_firma||''
+  })),'Asesorías','Asesorias');
+  toast('Exportando Asesorías','ok');
+}
+
+// ── INIT
+(async()=>{ await Promise.all([cargarP(),cargarA()]); })();
+</script>
+</body>
+</html>
