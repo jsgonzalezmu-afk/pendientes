@@ -124,6 +124,8 @@ textarea{resize:vertical;min-height:70px}
 .ia{width:28px;height:28px;border:none;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0}
 .ia:active{transform:scale(.92)}
 .ia-e{background:#e8edf8;color:var(--navy)}.ia-e:hover{background:#d0d9f0}
+.ia-h{background:#fef3c7;color:#a16207}.ia-h:hover{background:#fde68a}
+.ia-h.on{background:#f59e0b;color:#fff}.ia-h.on:hover{background:#d97706}
 .ia-p{background:#fef3c7;color:#92400e}.ia-p:hover{background:#fde68a}
 .ia-g{background:#dbeafe;color:#1e40af}.ia-g:hover{background:#bfdbfe}
 .ia-v{background:#d1fae5;color:#065f46}.ia-v:hover{background:#a7f3d0}
@@ -648,6 +650,7 @@ document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.
 // SVG icons
 const IC={
   e:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+  h:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.1 6.6.9-4.8 4.7 1.1 6.6L12 17.2 6.2 20.3l1.1-6.6-4.8-4.7 6.6-.9L12 2z"/></svg>`,
   p:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
   g:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
   v:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
@@ -698,11 +701,24 @@ function listaFiltrada(){
   return pendientes.filter(x=>x.estado===filP);
 }
 
+function ordenarPendientes(lista){
+  const prioridad={Alta:0,Media:1,Baja:2};
+  return [...lista].sort((a,b)=>{
+    const hoyA=a.es_hoy===true||a.es_hoy==='true';
+    const hoyB=b.es_hoy===true||b.es_hoy==='true';
+    if(hoyA!==hoyB)return hoyA?-1:1;
+    const prioA=prioridad[a.prioridad]??99;
+    const prioB=prioridad[b.prioridad]??99;
+    if(prioA!==prioB)return prioA-prioB;
+    return String(b.fecha||'').localeCompare(String(a.fecha||''))||Number(b.id)-Number(a.id);
+  });
+}
+
 function renderP(){
   // excluimos finalizados de la tabla activa
   const base=listaFiltrada().filter(x=>x.estado!=='Finalizado');
   // si filtro es 'todos', incluimos finalizados también
-  const lista = filP==='todos' ? listaFiltrada() : base;
+  const lista = ordenarPendientes(filP==='todos' ? listaFiltrada() : base);
   const total=lista.length;
   const totPag=Math.ceil(total/POR_PAG)||1;
   if(pagP>totPag)pagP=totPag;
@@ -730,6 +746,7 @@ function renderP(){
         <td><span class="bx ${eb}">${p.estado||'Pendiente'}</span></td>
         <td style="font-size:12px;color:var(--muted)">${obs||'—'}</td>
         <td><div class="acts">
+           <button class="ia ia-h ${p.es_hoy===true||p.es_hoy==='true'?'on':''}" onclick="toggleHoy('${p.id}')" title="${p.es_hoy===true||p.es_hoy==='true'?'Quitar de Hoy sí o sí':'Marcar como Hoy sí o sí'}">${IC.h}</button>
           <button class="ia ia-e" onclick="abrirEP('${p.id}')" title="Editar">${IC.e}</button>
           <button class="ia ia-p" onclick="estadoP('${p.id}','Pendiente')" title="→ Pendiente">${IC.p}</button>
           <button class="ia ia-g" onclick="estadoP('${p.id}','En progreso')" title="→ En progreso">${IC.g}</button>
@@ -783,7 +800,7 @@ function renderFinMes(){
   }
   cont.innerHTML=claves.map((clave,idx)=>{
     const [y,m]=clave.split('-');
-    const items=mesesMap[clave];
+     const items=ordenarPendientes(mesesMap[clave]);
     const isOpen=idx===0;
     const rows=items.map(p=>{
       const pb=p.prioridad==='Alta'?'b-a':p.prioridad==='Baja'?'b-b':'b-m';
@@ -840,7 +857,7 @@ async function crearP(){
   const obj={actividad:act,caso,tipo:document.getElementById('p-tipo').value,
     tipo_gestion:document.getElementById('p-tg').value,prioridad:document.getElementById('p-prio').value,
     tiempo:document.getElementById('p-tiempo').value||null,observaciones:document.getElementById('p-obs').value,
-    fecha:hoy(),estado:'Pendiente'};
+     fecha:hoy(),estado:'Pendiente',es_hoy:false};
   const {error}=await DB.from('pendientes').insert([obj]);
   if(error){toast('Error: '+error.message,'err');return;}
   toast('Pendiente guardado','ok');
@@ -856,6 +873,16 @@ async function estadoP(id,estado){
   const {error}=await DB.from('pendientes').update(up).eq('id',id);
   if(error){toast('Error: '+error.message,'err');return;}
   toast(`→ ${estado}`,'ok');await cargarP();
+}
+
+async function toggleHoy(id){
+  const actual=pendientes.find(x=>x.id==id);
+  if(!actual)return;
+  const marcado=actual.es_hoy===true||actual.es_hoy==='true';
+  const {error}=await DB.from('pendientes').update({es_hoy:!marcado}).eq('id',id);
+  if(error){toast('Error: '+error.message,'err');return;}
+  toast(marcado?'Quitado de Hoy sí o sí':'Marcado para Hoy sí o sí','ok');
+  await cargarP();
 }
 
 function abrirEP(id){
