@@ -568,7 +568,13 @@ let pendientes=[], asesorias=[], filP='activos', filA='todos', pagP=1;
 const POR_PAG=5;
 
 // ── UTILS ─────────────────────────────
-const hoy=()=>new Date().toISOString().split('T')[0];
+// Usa la fecha local del dispositivo, no UTC. toISOString() puede adelantar
+// el día en zonas horarias como Colombia cuando aún es la fecha anterior.
+const hoy=()=>{
+  const d=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+};
 const ahora=()=>new Date().toTimeString().slice(0,5);
 function fmt(f){if(!f)return'—';const p=f.split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:f;}
 function fmtM(v){if(!v&&v!==0)return'—';return new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(v);}
