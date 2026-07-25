@@ -135,6 +135,10 @@ textarea{resize:vertical;min-height:70px}
 .pills{display:flex;gap:5px;flex-wrap:wrap}
 .pill{padding:4px 12px;border-radius:20px;border:1.5px solid var(--border);background:var(--white);font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .12s}
 .pill:hover,.pill.on{border-color:var(--navy);color:var(--navy);background:var(--soft)}
+.filtros-p{display:grid;grid-template-columns:minmax(220px,2fr) repeat(3,minmax(135px,1fr)) auto;gap:8px;margin-top:12px}
+.filtros-p input,.filtros-p select{height:34px;padding:6px 9px;font-size:12px}
+@media(max-width:900px){.filtros-p{grid-template-columns:repeat(2,minmax(140px,1fr))}}
+@media(max-width:500px){.filtros-p{grid-template-columns:1fr}}
 
 /* ─── TABLE ─── */
 .tw{overflow-x:auto}
@@ -311,6 +315,24 @@ tbody tr:last-child{border-bottom:none}
         <button class="pill" onclick="filtP('Pendiente',this)">Solo Pendiente</button>
         <button class="pill" onclick="filtP('En progreso',this)">En progreso</button>
         <button class="pill" onclick="filtP('todos',this)">Todos</button>
+      </div>
+      <div class="filtros-p">
+        <input id="fp-buscar" type="search" placeholder="Buscar actividad, caso, tipo u observación..." oninput="cambiarFiltroP()"/>
+        <select id="fp-prioridad" onchange="cambiarFiltroP()" aria-label="Filtrar por prioridad">
+          <option value="">Todas las prioridades</option>
+          <option value="Alta">Alta</option>
+          <option value="Media">Media</option>
+          <option value="Baja">Baja</option>
+        </select>
+        <select id="fp-tipo" onchange="cambiarFiltroP()" aria-label="Filtrar por tipo">
+          <option value="">Todos los tipos</option>
+        </select>
+        <select id="fp-hoy" onchange="cambiarFiltroP()" aria-label="Filtrar por Hoy sí o sí">
+          <option value="">Todos</option>
+          <option value="si">Hoy sí o sí</option>
+          <option value="no">Sin marcar</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="limpiarFiltrosP()">Limpiar filtros</button>
       </div>
     </div>
     <div class="tw">
@@ -567,6 +589,7 @@ const DB={
 
 // ── ESTADO ────────────────────────────
 let pendientes=[], asesorias=[], filP='activos', filA='todos', pagP=1;
+let filtroTextoP='', filtroPrioridadP='', filtroTipoP='', filtroHoyP='';
 const POR_PAG=5;
 
 // ── UTILS ─────────────────────────────
@@ -666,6 +689,7 @@ async function cargarP(){
     const {data,error}=await conTiempoLimite(DB.from('pendientes').select('*').order('fecha',{ascending:false}));
     if(error)throw error;
     pendientes=data||[];
+    actualizarTiposFiltroP();
     renderStatsP();renderP();renderFinMes();
     document.getElementById('chip-p').textContent=pendientes.length;
   }catch(error){
@@ -695,10 +719,50 @@ function filtP(est,btn){
   renderP();
 }
 
+function actualizarTiposFiltroP(){
+  const select=document.getElementById('fp-tipo');
+  if(!select)return;
+  const actual=select.value;
+  const tipos=[...new Set(pendientes.map(p=>p.tipo).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  select.innerHTML='<option value="">Todos los tipos</option>'+
+    tipos.map(tipo=>`<option value="${tipo.replace(/"/g,'&quot;')}">${tipo}</option>`).join('');
+  select.value=tipos.includes(actual)?actual:'';
+}
+
+function cambiarFiltroP(){
+  filtroTextoP=document.getElementById('fp-buscar').value.trim().toLowerCase();
+  filtroPrioridadP=document.getElementById('fp-prioridad').value;
+  filtroTipoP=document.getElementById('fp-tipo').value;
+  filtroHoyP=document.getElementById('fp-hoy').value;
+  pagP=1;
+  renderP();
+}
+
+function limpiarFiltrosP(){
+  document.getElementById('fp-buscar').value='';
+  document.getElementById('fp-prioridad').value='';
+  document.getElementById('fp-tipo').value='';
+  document.getElementById('fp-hoy').value='';
+  filtroTextoP=filtroPrioridadP=filtroTipoP=filtroHoyP='';
+  pagP=1;
+  renderP();
+}
+
 function listaFiltrada(){
   if(filP==='activos') return pendientes.filter(x=>x.estado==='Pendiente'||x.estado==='En progreso');
   if(filP==='todos') return pendientes;
   return pendientes.filter(x=>x.estado===filP);
+}
+
+function aplicarFiltrosP(lista){
+  return lista.filter(p=>{
+    const texto=[p.actividad,p.caso,p.tipo,p.tipo_gestion,p.observaciones].filter(Boolean).join(' ').toLowerCase();
+    const marcado=p.es_hoy===true||p.es_hoy==='true';
+    return (!filtroTextoP||texto.includes(filtroTextoP)) &&
+      (!filtroPrioridadP||p.prioridad===filtroPrioridadP) &&
+      (!filtroTipoP||p.tipo===filtroTipoP) &&
+      (!filtroHoyP||(filtroHoyP==='si'?marcado:!marcado));
+  });
 }
 
 function ordenarPendientes(lista){
@@ -716,9 +780,9 @@ function ordenarPendientes(lista){
 
 function renderP(){
   // excluimos finalizados de la tabla activa
-  const base=listaFiltrada().filter(x=>x.estado!=='Finalizado');
+  const base=aplicarFiltrosP(listaFiltrada().filter(x=>x.estado!=='Finalizado'));
   // si filtro es 'todos', incluimos finalizados también
-  const lista = ordenarPendientes(filP==='todos' ? listaFiltrada() : base);
+  const lista = ordenarPendientes(filP==='todos' ? aplicarFiltrosP(listaFiltrada()) : base);
   const total=lista.length;
   const totPag=Math.ceil(total/POR_PAG)||1;
   if(pagP>totPag)pagP=totPag;
