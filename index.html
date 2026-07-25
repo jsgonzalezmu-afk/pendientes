@@ -1021,13 +1021,13 @@ function dl(rows,hoja,archivo){
   const ws=XLSX.utils.json_to_sheet(rows);
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,hoja);
-  XLSX.writeFile(wb,`${archivo}_${hoy()}.xlsx`);
+  XLSX.writeFile(wb,`${archivo}.xlsx`);
 }
 
 function expP(){
   if(!pendientes.length){toast('No hay datos','err');return;}
   dl(pendientes.map(p=>({
-    'Fecha':p.fecha||'','Actividad':p.actividad||'','Tipo':p.tipo||'',
+    'Fecha':p.fecha_realizacion||'','Actividad':p.actividad||'','Tipo':p.tipo||'',
     'Caso*en esta ciudad':p.caso||'','Tipo de Gestion':p.tipo_gestion||'',
     'Prioridad':p.prioridad||'','Tiempo':p.tiempo||'','OBSERVACIONES':p.observaciones||''
   })),'Mes a Mes','Pendientes');
